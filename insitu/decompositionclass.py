@@ -451,7 +451,7 @@ class Decomposition(object):
         bar.close()
 
     def plot_pk_sphere(self, freq = 1000, db = False, dinrange = 12,
-        save = False, name='', travel = True):
+        save = False, name='', path='', travel = True):
         """ plot the magnitude of P(k) as a scatter plot of propagating waves
 
         Plot the magnitude of the wave number spectrum as a scatter plot of
@@ -478,9 +478,11 @@ class Decomposition(object):
         """
         id_f = np.where(self.controls.freq <= freq)
         id_f = id_f[0][-1]
-        fig = plt.figure()
+        ticks = [-1, -0.5, 0.0, 0.5, 1.0]; ticksLabel = ['-1,0', '-0,5', '0,0', '0,5', '1,0']
+        fig = plt.figure(figsize=(2,1.6), dpi=800)
         fig.canvas.set_window_title('Scatter plot of |P(k)| for freq {} Hz'.format(self.controls.freq[id_f]))
-        ax = fig.gca(projection='3d')
+        ax = fig.gca(projection='3d', alpha=0.3)
+       # ax.view_init(30,-45)        
         if db:
             color_par = 20*np.log10(np.abs(self.pk[:,id_f])/np.amax(np.abs(self.pk[:,id_f])))
             id_outofrange = np.where(color_par < -dinrange)
@@ -488,18 +490,37 @@ class Decomposition(object):
         else:
             color_par = np.abs(self.pk[:,id_f])/np.amax(np.abs(self.pk[:,id_f]))
         if travel:
-            p=ax.scatter(self.dir[:,0], self.dir[:,1], -self.dir[:,2], c = color_par)
+            p=ax.scatter(self.dir[:,0], self.dir[:,1], -self.dir[:,2], c = color_par, alpha=0.08)
         else:
-            p=ax.scatter(self.dir[:,0], self.dir[:,1], self.dir[:,2], c = color_par)
-        fig.colorbar(p)
-        ax.set_xlabel('X axis')
-        ax.set_ylabel('Y axis')
-        ax.set_zlabel('Z axis')
-        plt.title('|P(k)| at ' + str(self.controls.freq[id_f]) + 'Hz - ' + name)
-        plt.tight_layout()
+            p=ax.scatter(self.dir[:,0], self.dir[:,1], self.dir[:,2], c = color_par, alpha=0.08)
+        cbar = fig.colorbar(p, location='top', orientation='horizontal', anchor=(0.4, -1.55), shrink=0.3)
+        cbar.ax.set_xticks([-12, -8, -4, 0])       
+        cbar.ax.set_xticklabels(['-12', '-8','-4', '0'], verticalalignment='top', horizontalalignment='center', fontsize=4)  # horizontal colorbar  
+        cbar.ax.set_title('[dB]',x=1.25, y=0.12, fontsize=3.5)
+        cbar.set_alpha(.85); cbar.draw_all()
+        ax.set_xticks(ticks); ax.set_xticklabels(ticksLabel,rotation=0, verticalalignment='bottom', horizontalalignment='center', fontsize=3.8)
+        ax.set_yticks(ticks); ax.set_yticklabels(ticksLabel,rotation=0, verticalalignment='bottom', horizontalalignment='center', fontsize=3.8)
+        ax.set_zticks(ticks); ax.set_zticklabels(ticksLabel,rotation=0, verticalalignment='center', horizontalalignment='right', fontsize=3.8)
+        #fig.align_labels()
+        ax.tick_params(axis='x', which='major', pad=-4.5)
+        ax.tick_params(axis='y', which='major', pad=-4.2)
+        ax.tick_params(axis='z', which='major', pad=-3)
+        #ax.set_yticks(ticks, ticksLabel); ax.set_zticks(ticks, ticksLabel)
+        ax.set_xlabel(r'$^{k_{\hat{x}}}/_{k_{0}}$'+'\n',fontsize=6.5,labelpad=-13.1)
+        ax.set_ylabel(r'$^{k_{\hat{y}}}/_{k_{0}}$',fontsize=6.5,labelpad=-13.7)
+        ax.set_zlabel(r'$^{k_{\hat{z}}}/_{k_{0}}$', fontsize=6.5,labelpad=-13.6)
+        cbar.ax.set_xticks([-12, -8, -4, 0])
+       # plt.title('Magnitude |P(k)| em ' + str(int(self.controls.freq[id_f])) + 'Hz', x=0.5, y=1.0)
+        #title.set_position([0.5, -0.25])
+        #plt.tight_layout()
+        #fig.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0.014, hspace=0.0, wspace=0.0) 
+        #fig.subplots_adjust(left=0, right=1, top=1.0, bottom=0.1, hspace=0.0, wspace=0.0) 
+        fig.subplots_adjust(top=1.0, bottom=0.1, left=0.0, right=1, hspace=0.0, wspace=0.0)
+        plt.show()
         if save:
-            filename = 'data/colormaps/cmat_' + str(int(freq)) + 'Hz_' + name
-            plt.savefig(fname = filename, format='pdf')
+            filename = path + 'Pksphere' + str(int(freq)) + 'Hz_' + name + '.pdf'
+            
+            plt.savefig(fname = filename, dpi=800, bbox_size='tight', pad_inches=0, transparent=True)
 
     def plot_pk_map(self, freq = 1000, db = False, dinrange = 40, phase = False,
         save = False, name='', path = '', fname='', color_code = 'viridis'):
@@ -541,7 +562,7 @@ class Decomposition(object):
         else:
             id_f = np.where(self.controls.freq <= freq)
         id_f = id_f[0][-1]
-        fig = plt.figure()
+        fig = plt.figure(figsize=(5,4), dpi=300)
         fig.canvas.set_window_title('Interpolated map of |P(k)| for freq {} Hz'.format(self.controls.freq[id_f]))
         if db:
             color_par = 20*np.log10(np.abs(self.grid_pk[id_f])/np.amax(np.abs(self.grid_pk[id_f])))
@@ -551,17 +572,20 @@ class Decomposition(object):
             color_range = np.linspace(0, 1, 21)
         p=plt.contourf(np.rad2deg(self.grid_phi), 90-np.rad2deg(self.grid_theta), color_par,
             color_range, extend='both', cmap = color_code)
-        fig.colorbar(p)
-        plt.xlabel(r'$\phi$ (azimuth) [deg]')
-        plt.ylabel(r'$\theta$ (elevation) [deg]')
+        fig.colorbar(p,label='[dB]')
+        plt.xticks([-180, -90, 0, 90, 180], ['-180', '-90', '0', '90', '180'])
+        plt.yticks([0, 45, 90, 135, 180], ['0', '45', '90', '135', '180'])
+        plt.xlabel(r'$\phi [^{\circ}]$ (azimute)')
+        plt.ylabel(r'$\theta [^{\circ}]$ (elevação)')
         if self.flag_oct_interp:
-            plt.title('|P(k)| at ' + str(self.freq_oct[id_f]) + 'Hz - '+ name)
+            plt.title(r'Espectro 2D de $\|\tilde{P}(k)\|$ em ' + str(round(self.freq_oct[id_f])) + 'Hz - '+ name)
         else:
-            plt.title('|P(k)| at ' + str(self.controls.freq[id_f]) + 'Hz - P decomp. '+ name)
+            plt.title(r'Espectro 2D de $\|\tilde{P}(k)\|$ em ' + str(round(self.controls.freq[id_f])) + 'Hz - ' + name)
         plt.tight_layout()
+       # fig.subplots_adjust(left=0.171, right=0.9, top=0.91, bottom=0.08, hspace=0.0, wspace=0.0) 
         if save:
-            filename = path + fname + '_' + str(int(freq)) + 'Hz'
-            plt.savefig(fname = filename, format='png')
+            filename = path + fname + '_' + str(int(freq)) + 'Hz.png'
+            plt.savefig(fname = filename, dpi=300, bbox_size='tight', transparent=True)
 
     def save(self, filename = 'array_zest', path = '/home/eric/dev/insitu/data/zs_recovery/'):
         """ To save the decomposition object as pickle
