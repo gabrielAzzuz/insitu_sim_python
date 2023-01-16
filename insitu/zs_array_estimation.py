@@ -134,7 +134,7 @@ class ZsArray(Decomposition):
         Decomposition.__init__(self, p_mtx, controls, material, receivers)
         super().__init__(p_mtx, controls, material, receivers)
 
-    def zs(self, Lx = 0.1, Ly = 0.1, n_x = 21, n_y = 21, theta = [0], avgZs = True):
+    def zs(self, Lx = 0.1, Ly = 0.1, n_x = 21, n_y = 21, zr=0.0, theta = [0], avgZs = True):
         """ Reconstruct the surface impedance and estimate the absorption
 
         Reconstruct pressure and particle velocity at a grid of points
@@ -163,7 +163,7 @@ class ZsArray(Decomposition):
         """
         # Set the grid used to reconstruct the surface impedance
         grid = Receiver()
-        grid.planar_array(x_len=Lx, y_len=Ly, zr=0.0, n_x = n_x, n_y = n_x)
+        grid.planar_array(x_len=Lx, y_len=Ly, zr=zr, n_x = n_x, n_y = n_x)
         if n_x > 1 or n_y > 1:
             self.grid = grid.coord
         else:
